@@ -1,0 +1,9 @@
+﻿C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Entities\Exercise.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Entities\Subscription.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Entities\User.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Entities\WorkoutSession.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Enums\MuscleGroup.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Enums\PlanType.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Enums\SubscriptionStatus.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Enums\UserRole.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Domain\Enums\WorkoutSessionStatus.cs

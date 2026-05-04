@@ -1,0 +1,6 @@
+@FitnessCorrector.WebAPI_HostAddress = http://localhost:5168
+
+GET {{FitnessCorrector.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

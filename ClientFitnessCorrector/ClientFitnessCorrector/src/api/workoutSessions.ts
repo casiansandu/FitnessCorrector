@@ -1,0 +1,75 @@
+const API_BASE_URL = 'http://localhost:5168/api'
+
+export type AnalyzeSessionResponse = {
+  message: string
+  sessionId: string
+  status: number
+}
+
+export type LandmarkPoint = {
+  x: number
+  y: number
+  z: number
+}
+
+export type LandmarkFrame = LandmarkPoint[]
+
+export type LineSegment = {
+  start: number
+  end: number
+}
+
+export type FrameAnalysis = {
+  frame_index: number
+  timestamp_ms: number
+  bad_form: boolean | null
+  failed_checks: string[]
+  red_lines: LineSegment[]
+  green_lines: LineSegment[]
+}
+
+export type WorkoutLandmarksResponse = {
+  workout_session_id: string
+  exercise_name: string
+  fps: number
+  landmarks: LandmarkFrame[]
+  tracked_lines?: LineSegment[]
+  frame_analysis?: FrameAnalysis[]
+}
+
+type AnalyzeParams = {
+  exerciseId: string
+  slug: string
+  file: File
+}
+
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || `Request failed with status ${response.status}`)
+  }
+  return response.json() as Promise<T>
+}
+
+export async function analyzeWorkoutSession({ exerciseId, slug, file }: AnalyzeParams): Promise<AnalyzeSessionResponse> {
+  const formData = new FormData()
+  formData.append('ExerciseId', exerciseId)
+  formData.append('Slug', slug)
+  formData.append('VideoFile', file)
+
+  const response = await fetch(`${API_BASE_URL}/WorkoutSessions/analyze`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+
+  return handleResponse<AnalyzeSessionResponse>(response)
+}
+
+export async function fetchWorkoutLandmarks(sessionId: string): Promise<WorkoutLandmarksResponse> {
+  const response = await fetch(`${API_BASE_URL}/WorkoutSessions/${sessionId}/landmarks`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+  return handleResponse<WorkoutLandmarksResponse>(response)
+}

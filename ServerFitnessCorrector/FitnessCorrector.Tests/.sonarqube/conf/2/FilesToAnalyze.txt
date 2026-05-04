@@ -1,0 +1,16 @@
+﻿C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\AnalyzeWorkoutCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\CancelSubscriptionCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\CreateExerciseCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\CreateSubscriptionCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\HandleStripeWebhookCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\LoginUserCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\RegisterUserCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\UnitTest1.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\UpdateSubscriptionCommandValidatorTests.cs
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\UploadWorkoutVideoCommandValidatorTests.cs
+C:\Users\casia\.nuget\packages\microsoft.net.test.sdk\17.14.1\build\net8.0\Microsoft.NET.Test.Sdk.Program.cs
+C:\Users\casia\.nuget\packages\microsoft.testplatform.testhost\17.14.1\build\net8.0\x64\testhost.exe
+C:\Users\casia\.nuget\packages\microsoft.testplatform.testhost\17.14.1\build\net8.0\x64\testhost.dll
+C:\Users\casia\.nuget\packages\xunit.runner.visualstudio\3.1.4\build\net8.0\xunit.abstractions.dll
+C:\Users\casia\.nuget\packages\xunit.runner.visualstudio\3.1.4\build\net8.0\xunit.runner.visualstudio.testadapter.dll
+C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\ServerFitnessCorrector\FitnessCorrector.Tests\TestResults\92765afa-e70d-4017-88ae-45ef74af8f4d\coverage.cobertura.xml
