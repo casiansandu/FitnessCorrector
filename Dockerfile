@@ -11,13 +11,16 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app/out
 
 RUN apt-get update \
-    && apt-get install -y python3 python3-pip libgl1 libglib2.0-0 \
+    && apt-get install -y python3 python3-venv python3-pip libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/out ./
 COPY --from=build /src/PoseDetection ./PoseDetection
 
-RUN python3 -m pip install --no-cache-dir -r PoseDetection/requirements.txt
+RUN python3 -m venv /opt/pose-venv \
+    && /opt/pose-venv/bin/pip install --no-cache-dir -r PoseDetection/requirements.txt
+
+ENV PYTHON_BIN=/opt/pose-venv/bin/python
 
 ENV ASPNETCORE_URLS=http://0.0.0.0:$PORT
 

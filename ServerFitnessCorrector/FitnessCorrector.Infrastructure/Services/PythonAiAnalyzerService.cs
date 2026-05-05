@@ -31,7 +31,7 @@ public class PythonAiAnalyzerService : IAiAnalyzerService
 
         var start = new ProcessStartInfo
         {
-            FileName = OperatingSystem.IsWindows() ? "python" : "python3",
+            FileName = ResolvePythonPath(),
             Arguments = $"main.py \"{workoutSessionId}\" \"{tempVideoPath}\" \"{exerciseSlug}\" \"{outputPath}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -74,5 +74,16 @@ public class PythonAiAnalyzerService : IAiAnalyzerService
                 // Cleanup failure should not fail the analysis.
             }
         }
+    }
+
+    private static string ResolvePythonPath()
+    {
+        var configuredPath = Environment.GetEnvironmentVariable("PYTHON_BIN");
+        if (!string.IsNullOrWhiteSpace(configuredPath))
+        {
+            return configuredPath;
+        }
+
+        return OperatingSystem.IsWindows() ? "python" : "python3";
     }
 }

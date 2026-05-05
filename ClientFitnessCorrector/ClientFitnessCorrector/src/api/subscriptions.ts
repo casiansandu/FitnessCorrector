@@ -7,7 +7,7 @@ import {
   type PlanPricing
 } from '../types/subscription'
 
-const API_BASE_URL = 'http://localhost:5168/api'
+const API_BASE_URL = 'https://fitness-corrector-be.onrender.com/api'
 
 const extractApiErrorMessage = (errorPayload: unknown, fallback: string): string => {
   if (errorPayload && typeof errorPayload === 'object') {

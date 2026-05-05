@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5168/api'
+const API_BASE_URL = 'https://fitness-corrector-be.onrender.com/api'
 
 type ValidationIssue = {
   property: string
