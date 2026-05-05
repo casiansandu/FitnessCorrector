@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using FitnessCorrector.Domain.Entities;
@@ -43,6 +44,24 @@ public static class DbSeeder
         };
 
         context.Users.Add(adminUser);
+        await context.SaveChangesAsync();
+    }
+
+    public static async Task SeedExercisesAsync(AppDbContext context)
+    {
+        if (await context.Exercises.AnyAsync())
+        {
+            return;
+        }
+
+        var exercises = new List<Exercise>
+        {
+            Exercise.Create("squat", "Back Squat", "Barbell back squat", MuscleGroup.Legs),
+            Exercise.Create("deadlift", "Deadlift", "Conventional deadlift", MuscleGroup.Back),
+            Exercise.Create("bench-press", "Bench Press", "Barbell bench press", MuscleGroup.Chest)
+        };
+
+        context.Exercises.AddRange(exercises);
         await context.SaveChangesAsync();
     }
 

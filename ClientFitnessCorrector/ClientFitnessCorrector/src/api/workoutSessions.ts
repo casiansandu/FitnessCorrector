@@ -37,6 +37,24 @@ export type WorkoutLandmarksResponse = {
   frame_analysis?: FrameAnalysis[]
 }
 
+export type WorkoutSessionAdminDto = {
+  id: string
+  userId: string
+  exerciseId: string
+  videoFilePath: string
+  status: number | string
+  aiFeedback?: string | null
+  outputPath?: string | null
+  createdAt: string
+}
+
+export type TrialUsageResponse = {
+  isSubscriber: boolean
+  totalCount: number
+  remainingCount: number
+  limit: number
+}
+
 type AnalyzeParams = {
   exerciseId: string
   slug: string
@@ -72,4 +90,20 @@ export async function fetchWorkoutLandmarks(sessionId: string): Promise<WorkoutL
     credentials: 'include',
   })
   return handleResponse<WorkoutLandmarksResponse>(response)
+}
+
+export async function fetchAdminWorkoutSessions(take = 25): Promise<WorkoutSessionAdminDto[]> {
+  const response = await fetch(`${API_BASE_URL}/WorkoutSessions/admin-sessions?take=${take}`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+  return handleResponse<WorkoutSessionAdminDto[]>(response)
+}
+
+export async function fetchTrialUsage(): Promise<TrialUsageResponse> {
+  const response = await fetch(`${API_BASE_URL}/WorkoutSessions/trial-usage`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+  return handleResponse<TrialUsageResponse>(response)
 }

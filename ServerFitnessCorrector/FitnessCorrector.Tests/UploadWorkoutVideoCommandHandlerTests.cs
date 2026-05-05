@@ -12,6 +12,7 @@ public class UploadWorkoutVideoCommandHandlerTests
     {
         var repository = new Mock<IWorkoutSessionRepository>();
         var aiService = new Mock<IAiAnalyzerService>();
+        var metricsRepository = new Mock<IWorkoutSessionMetricsRepository>();
 
         var outputPath = Path.GetTempFileName();
 
@@ -24,7 +25,7 @@ public class UploadWorkoutVideoCommandHandlerTests
                 It.IsAny<string>()))
             .ReturnsAsync(("ok", outputPath));
 
-        var handler = new UploadWorkoutVideoCommandHandler(repository.Object, aiService.Object);
+        var handler = new UploadWorkoutVideoCommandHandler(repository.Object, aiService.Object, metricsRepository.Object);
 
         using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
         var command = new UploadWorkoutVideoCommand(
@@ -50,6 +51,7 @@ public class UploadWorkoutVideoCommandHandlerTests
     {
         var repository = new Mock<IWorkoutSessionRepository>();
         var aiService = new Mock<IAiAnalyzerService>();
+        var metricsRepository = new Mock<IWorkoutSessionMetricsRepository>();
 
         var outputPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".mp4");
 
@@ -62,7 +64,7 @@ public class UploadWorkoutVideoCommandHandlerTests
                 It.IsAny<string>()))
             .ReturnsAsync(("failed", outputPath));
 
-        var handler = new UploadWorkoutVideoCommandHandler(repository.Object, aiService.Object);
+        var handler = new UploadWorkoutVideoCommandHandler(repository.Object, aiService.Object, metricsRepository.Object);
 
         using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
         var command = new UploadWorkoutVideoCommand(

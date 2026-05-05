@@ -9,4 +9,6 @@ public interface IWorkoutSessionRepository
 
     Task<WorkoutSession?> GetByIdAsync(Guid id);
     Task<IEnumerable<WorkoutSession>> GetByUserIdAsync(Guid userId);
+    Task<IEnumerable<WorkoutSession>> GetLatestAsync(int take);
+    Task<int> CountByUserIdAsync(Guid userId);
 }

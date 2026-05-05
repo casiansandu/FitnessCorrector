@@ -28,9 +28,43 @@ TRACKED_LINES = [
     (PoseLandmark.RIGHT_KNEE, PoseLandmark.RIGHT_ANKLE),
 ]
 
+EXERCISE_METRICS_CONFIG = {
+    "squat": {
+        "left": (PoseLandmark.LEFT_HIP, PoseLandmark.LEFT_KNEE, PoseLandmark.LEFT_ANKLE),
+        "right": (PoseLandmark.RIGHT_HIP, PoseLandmark.RIGHT_KNEE, PoseLandmark.RIGHT_ANKLE),
+        "min_range_ratio": 0.25,
+    },
+    "deadlift": {
+        "left": (PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_HIP, PoseLandmark.LEFT_KNEE),
+        "right": (PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_HIP, PoseLandmark.RIGHT_KNEE),
+        "min_range_ratio": 0.2,
+    },
+    "benchpress": {
+        "left": (PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_ELBOW, PoseLandmark.LEFT_WRIST),
+        "right": (PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_ELBOW, PoseLandmark.RIGHT_WRIST),
+        "min_range_ratio": 0.2,
+    },
+}
+
 
 def normalize_exercise_name(exercise_name):
     return exercise_name.strip().lower().replace('-', '').replace('_', '').replace(' ', '')
+
+
+def get_metrics_config(exercise_name):
+    normalized = normalize_exercise_name(exercise_name)
+    config = EXERCISE_METRICS_CONFIG.get(normalized)
+    if config is not None:
+        return config
+
+    if "squat" in normalized:
+        return EXERCISE_METRICS_CONFIG.get("squat")
+    if "deadlift" in normalized:
+        return EXERCISE_METRICS_CONFIG.get("deadlift")
+    if "bench" in normalized:
+        return EXERCISE_METRICS_CONFIG.get("benchpress")
+
+    return None
 
 
 def line_to_dict(line):
@@ -48,6 +82,110 @@ def calculate_angle(a, b, c):
     cosine = np.dot(ba, bc) / denominator
     cosine = np.clip(cosine, -1.0, 1.0)
     return float(np.degrees(np.arccos(cosine)))
+
+
+def clamp(value, min_value, max_value):
+    return max(min_value, min(max_value, value))
+
+
+def smooth_series(values, window=5):
+    if window <= 1 or len(values) < 3:
+        return values
+    half = window // 2
+    smoothed = []
+    for i in range(len(values)):
+        start = max(0, i - half)
+        end = min(len(values), i + half + 1)
+        smoothed.append(sum(values[start:end]) / (end - start))
+    return smoothed
+
+
+def find_local_extrema(values, kind, threshold):
+    indices = []
+    for i in range(1, len(values) - 1):
+        if kind == "min" and values[i] < values[i - 1] and values[i] < values[i + 1] and values[i] <= threshold:
+            indices.append(i)
+        if kind == "max" and values[i] > values[i - 1] and values[i] > values[i + 1] and values[i] >= threshold:
+            indices.append(i)
+    return indices
+
+
+def safe_average(values):
+    return sum(values) / len(values) if values else 0.0
+
+
+def build_rep_metrics(samples, min_range_ratio):
+    if len(samples) < 3:
+        return [], 0.0, 0.0, 0.0
+
+    angles = [sample["avg_angle"] for sample in samples]
+    smoothed = smooth_series(angles, window=5)
+    max_angle = max(smoothed)
+    min_angle = min(smoothed)
+    angle_range = max_angle - min_angle
+    if angle_range < 5:
+        return [], angle_range, max_angle, min_angle
+
+    min_threshold = max_angle - (angle_range * min_range_ratio)
+    max_threshold = min_angle + (angle_range * min_range_ratio)
+
+    minima = find_local_extrema(smoothed, "min", min_threshold)
+    maxima = find_local_extrema(smoothed, "max", max_threshold)
+
+    reps = []
+    for rep_index, min_idx in enumerate(minima):
+        prev_max = max([idx for idx in maxima if idx < min_idx], default=None)
+        next_max = min([idx for idx in maxima if idx > min_idx], default=None)
+        if prev_max is None or next_max is None:
+            continue
+
+        start_time = samples[prev_max]["timestamp_ms"]
+        end_time = samples[next_max]["timestamp_ms"]
+        mid_time = samples[min_idx]["timestamp_ms"]
+
+        total_seconds = max(0.0, (end_time - start_time) / 1000.0)
+        eccentric_seconds = max(0.0, (mid_time - start_time) / 1000.0)
+        concentric_seconds = max(0.0, (end_time - mid_time) / 1000.0)
+
+        depth = clamp((smoothed[prev_max] - smoothed[min_idx]) / 180.0, 0.0, 1.0)
+
+        diff_values = [sample["symmetry_diff"] for sample in samples[prev_max:next_max + 1]]
+        symmetry = clamp(1.0 - (safe_average(diff_values) / 180.0), 0.0, 1.0)
+
+        reps.append({
+            "rep_index": rep_index,
+            "depth": depth,
+            "tempo_total_seconds": total_seconds,
+            "tempo_eccentric_seconds": eccentric_seconds,
+            "tempo_concentric_seconds": concentric_seconds,
+            "symmetry": symmetry,
+        })
+
+    return reps, angle_range, max_angle, min_angle
+
+
+def summarize_metrics(samples, min_range_ratio):
+    reps, angle_range, max_angle, min_angle = build_rep_metrics(samples, min_range_ratio)
+    if reps:
+        avg_depth = safe_average([rep["depth"] for rep in reps])
+        avg_tempo = safe_average([rep["tempo_total_seconds"] for rep in reps])
+        avg_symmetry = safe_average([rep["symmetry"] for rep in reps])
+        rep_count = len(reps)
+    else:
+        avg_depth = clamp(angle_range / 180.0, 0.0, 1.0)
+        avg_symmetry = clamp(1.0 - (safe_average([sample["symmetry_diff"] for sample in samples]) / 180.0), 0.0, 1.0)
+        avg_tempo = 0.0
+        rep_count = 0
+
+    return {
+        "session": {
+            "avg_depth": round(avg_depth, 4),
+            "avg_tempo_seconds": round(avg_tempo, 4),
+            "avg_symmetry": round(avg_symmetry, 4),
+            "rep_count": rep_count,
+        },
+        "reps": reps,
+    }
 
 
 def load_exercise_evaluator(exercise_name):
@@ -163,12 +301,13 @@ def get_video_fps(cap):
     return fps
 
 
-def process_video_frames(cap, detector, fps, exercise_evaluator):
+def process_video_frames(cap, detector, fps, exercise_evaluator, metrics_config):
     frame_index = 0
     total_frames_analyzed = 0
     frames_with_poor_form = 0
     landmark_frames = []
     frame_analysis = []
+    metric_samples = []
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -199,6 +338,28 @@ def process_video_frames(cap, detector, fps, exercise_evaluator):
             landmarks = detection_result.pose_landmarks[0]
             total_frames_analyzed += 1
 
+            if metrics_config is not None:
+                left_triplet = metrics_config["left"]
+                right_triplet = metrics_config["right"]
+                left_angle = calculate_angle(
+                    landmarks[left_triplet[0]],
+                    landmarks[left_triplet[1]],
+                    landmarks[left_triplet[2]],
+                )
+                right_angle = calculate_angle(
+                    landmarks[right_triplet[0]],
+                    landmarks[right_triplet[1]],
+                    landmarks[right_triplet[2]],
+                )
+                avg_angle = (left_angle + right_angle) / 2
+                metric_samples.append({
+                    "timestamp_ms": timestamp_ms,
+                    "left_angle": left_angle,
+                    "right_angle": right_angle,
+                    "avg_angle": avg_angle,
+                    "symmetry_diff": abs(left_angle - right_angle),
+                })
+
             per_frame_form = evaluate_form_for_frame(landmarks, exercise_evaluator)
             frame_analysis.append(
                 {
@@ -224,16 +385,22 @@ def process_video_frames(cap, detector, fps, exercise_evaluator):
 
         frame_index += 1
 
+    metrics = None
+    if metrics_config is not None:
+        metrics = summarize_metrics(metric_samples, metrics_config["min_range_ratio"])
+
     return {
         "total_frames_analyzed": total_frames_analyzed,
         "frames_with_poor_form": frames_with_poor_form,
         "landmark_frames": landmark_frames,
         "frame_analysis": frame_analysis,
+        "metrics": metrics,
     }
 
 def main():
     workout_session_id, video_path, exercise_name, output_path = parse_cli_args()
     exercise_evaluator = load_exercise_evaluator(exercise_name)
+    metrics_config = get_metrics_config(exercise_name)
     if exercise_evaluator is None:
         print(f"Info: No plugin found for exercise slug '{exercise_name}'. Using generic checks only.")
 
@@ -241,7 +408,7 @@ def main():
 
     cap = cv2.VideoCapture(video_path)
     fps = get_video_fps(cap)
-    results = process_video_frames(cap, detector, fps, exercise_evaluator)
+    results = process_video_frames(cap, detector, fps, exercise_evaluator, metrics_config)
 
     cap.release()
     detector.close()
@@ -263,6 +430,7 @@ def main():
         "landmarks": results["landmark_frames"],
         "tracked_lines": [line_to_dict(line) for line in TRACKED_LINES],
         "frame_analysis": results["frame_analysis"],
+        "metrics": results.get("metrics"),
         "summary": {
             "total_frames_analyzed": results["total_frames_analyzed"],
             "frames_with_poor_form": results["frames_with_poor_form"],

@@ -9,6 +9,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Exercise> Exercises { get; set; }
     public DbSet<WorkoutSession> WorkoutSessions { get; set; }
+    public DbSet<WorkoutSessionMetrics> WorkoutSessionMetrics { get; set; }
+    public DbSet<WorkoutSessionRepMetric> WorkoutSessionRepMetrics { get; set; }
     public DbSet<User> Users { get; set; }
     
     public DbSet<Subscription> Subscriptions { get; set; }
@@ -49,6 +51,30 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkoutSessionMetrics>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.ExerciseSlug)
+                .IsRequired()
+                .HasMaxLength(60);
+
+            entity.HasOne<WorkoutSession>()
+                .WithMany()
+                .HasForeignKey(e => e.WorkoutSessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkoutSessionRepMetric>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne<WorkoutSession>()
+                .WithMany()
+                .HasForeignKey(e => e.WorkoutSessionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -6,6 +6,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { WorkoutPage } from './pages/WorkoutPage'
 import { SubscriptionsPage } from './pages/SubscriptionsPage'
 import { SubscriptionSuccessPage } from './pages/SubscriptionSuccessPage'
+import { ProgressPage } from './pages/ProgressPage'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/workout" element={<WorkoutPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
         <Route path="/control-panel" element={<ControlPanelPage />} />
         <Route path="/subscriptions" element={<SubscriptionsPage />} />
         <Route path="/success" element={<SubscriptionSuccessPage />} />

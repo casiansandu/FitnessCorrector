@@ -73,6 +73,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IWorkoutSessionRepository, WorkoutSessionsRepository>();
+builder.Services.AddScoped<IWorkoutSessionMetricsRepository, WorkoutSessionMetricsRepository>();
 builder.Services.AddScoped<IExercisesRepository, ExercisesRepository>();
 builder.Services.AddScoped<IAiAnalyzerService, PythonAiAnalyzerService>();
 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
@@ -132,6 +133,7 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     await DbSeeder.SeedAdminUserAsync(context, configuration);
+    await DbSeeder.SeedExercisesAsync(context);
 }
 
 if (app.Environment.IsDevelopment())

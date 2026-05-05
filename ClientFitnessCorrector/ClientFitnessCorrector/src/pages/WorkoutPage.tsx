@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import { UploadPanel } from '../components/UploadPanel'
 import { VideoStage } from '../components/VideoStage'
 import type { PoseStroke } from '../types/pose'
-import { analyzeWorkoutSession, fetchWorkoutLandmarks } from '../api/workoutSessions'
+import { analyzeWorkoutSession, fetchWorkoutLandmarks, fetchTrialUsage, type TrialUsageResponse } from '../api/workoutSessions'
 import type { FrameAnalysis, LandmarkFrame, LineSegment } from '../api/workoutSessions'
+import { fetchExercises, type ExerciseOption } from '../api/exercises'
 import { logoutUser } from '../api/auth'
 import { subscriptionApi } from '../api/subscriptions'
 import { SubscriptionStatus, type Subscription } from '../types/subscription'
@@ -14,13 +15,15 @@ const USER_ID_STORAGE_KEY = 'fitnessCorrectorUserId'
 const IS_ADMIN_STORAGE_KEY = 'fitnessCorrectorIsAdmin'
 
 type Exercise = {
-    id: string,
-    value: string,
-    label: string
-};
+  id: string
+  value: string
+  label: string
+}
 
-const EXERCISES: Exercise[] = [
-  { id: 'dcd28225-09e5-4c14-bf4b-46db421f1592', value: 'squat', label: 'Back Squat' }
+const FALLBACK_EXERCISES: Exercise[] = [
+  { id: 'squat', value: 'squat', label: 'Back Squat' },
+  { id: 'deadlift', value: 'deadlift', label: 'Deadlift' },
+  { id: 'bench-press', value: 'bench-press', label: 'Bench Press' },
 ]
 
 export function WorkoutPage() {
@@ -36,10 +39,14 @@ export function WorkoutPage() {
   const [trackedLines, setTrackedLines] = useState<LineSegment[]>([])
   const [frameAnalysis, setFrameAnalysis] = useState<FrameAnalysis[]>([])
   const [isSending, setIsSending] = useState(false)
-  const [selectedExercise, setSelectedExercise] = useState(EXERCISES[0])
+  const [exerciseOptions, setExerciseOptions] = useState<Exercise[]>(FALLBACK_EXERCISES)
+  const [selectedExercise, setSelectedExercise] = useState(FALLBACK_EXERCISES[0])
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [trialUsage, setTrialUsage] = useState<TrialUsageResponse | null>(null)
 
   const hasActiveSubscription = subscription?.status === SubscriptionStatus.Active || subscription?.status === SubscriptionStatus.Trialing
+  const hasTrialAccess = subscription == null
+  const canAnalyze = hasActiveSubscription || hasTrialAccess
 
   useEffect(() => {
     return () => {
@@ -62,6 +69,44 @@ export function WorkoutPage() {
     void loadSubscription()
   }, [])
 
+  useEffect(() => {
+    const loadTrialUsage = async () => {
+      try {
+        const data = await fetchTrialUsage()
+        setTrialUsage(data)
+      } catch {
+        setTrialUsage(null)
+      }
+    }
+
+    void loadTrialUsage()
+  }, [subscription])
+
+  useEffect(() => {
+    const loadExercises = async () => {
+      try {
+        const data = await fetchExercises()
+        if (data.length === 0) {
+          return
+        }
+
+        const mapped: Exercise[] = data.map((exercise: ExerciseOption) => ({
+          id: exercise.id,
+          value: exercise.slug,
+          label: exercise.name,
+        }))
+
+        setExerciseOptions(mapped)
+        setSelectedExercise(mapped[0])
+      } catch {
+        setExerciseOptions(FALLBACK_EXERCISES)
+        setSelectedExercise(FALLBACK_EXERCISES[0])
+      }
+    }
+
+    void loadExercises()
+  }, [])
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) {
@@ -82,7 +127,7 @@ export function WorkoutPage() {
     setLandmarkFps(null)
     setTrackedLines([])
     setFrameAnalysis([])
-    const exerciseLabel = EXERCISES.find((option) => option.value === selectedExercise.value)?.label ?? 'exercise'
+    const exerciseLabel = exerciseOptions.find((option) => option.value === selectedExercise.value)?.label ?? 'exercise'
     setStatusMessage(`Ready to send this clip for a ${exerciseLabel.toLowerCase()} analysis.`)
   }
 
@@ -92,14 +137,14 @@ export function WorkoutPage() {
       return
     }
 
-    if (!hasActiveSubscription) {
+    if (!canAnalyze) {
       setStatusMessage('You need an active subscription before sending videos for analysis.')
       navigate('/subscriptions')
       return
     }
 
     setIsSending(true)
-    const exerciseLabel = EXERCISES.find((option) => option.value === selectedExercise.value)?.label ?? 'training'
+    const exerciseLabel = exerciseOptions.find((option) => option.value === selectedExercise.value)?.label ?? 'training'
     setStatusMessage(`Sending your ${exerciseLabel.toLowerCase()} clip to the pose model...`)
 
     try {
@@ -121,6 +166,13 @@ export function WorkoutPage() {
       setOverlay([])
       setStatusMessage(`${exerciseLabel} pose overlay received. Ready for review.`)
 
+      try {
+        const data = await fetchTrialUsage()
+        setTrialUsage(data)
+      } catch {
+        setTrialUsage(null)
+      }
+
       console.log('Landmarks response:', landmarksResponse.landmarks.length * landmarksResponse.landmarks[0].length, 'points received')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Request failed. Try again.'
@@ -131,7 +183,7 @@ export function WorkoutPage() {
       }
 
       if (message.includes('403')) {
-        setStatusMessage('You need an active subscription before sending videos for analysis.')
+        setStatusMessage(message)
         navigate('/subscriptions')
         return
       }
@@ -152,9 +204,9 @@ export function WorkoutPage() {
   }
 
   const handleExerciseChange = (value: string) => {
-    setSelectedExercise(EXERCISES.find((option) => option.value === value) || EXERCISES[0])
+    setSelectedExercise(exerciseOptions.find((option) => option.value === value) || FALLBACK_EXERCISES[0])
     if (videoUrl) {
-      const exerciseLabel = EXERCISES.find((option) => option.value === value)?.label ?? 'exercise'
+      const exerciseLabel = exerciseOptions.find((option) => option.value === value)?.label ?? 'exercise'
       setStatusMessage(`Ready to send this clip for a ${exerciseLabel.toLowerCase()} analysis.`)
     }
   }
@@ -194,6 +246,14 @@ export function WorkoutPage() {
         <button type="button" className="subscription-chip" onClick={() => navigate('/subscriptions')}>
           Subscription
         </button>
+        <button type="button" className="progress-chip" onClick={() => navigate('/progress')}>
+          Progress
+        </button>
+        {trialUsage && !trialUsage.isSubscriber ? (
+          <div className="trial-chip">
+            Trial {trialUsage.remainingCount}/{trialUsage.limit}
+          </div>
+        ) : null}
         {isAdmin ? (
           <button type="button" className="admin-chip" onClick={() => navigate('/control-panel')}>
             Control Panel
@@ -212,20 +272,31 @@ export function WorkoutPage() {
       </header>
 
       <section className="workspace">
-        <UploadPanel
-          fileName={fileName}
-          statusMessage={statusMessage}
-          isSending={isSending}
-          hasVideo={Boolean(videoUrl)}
-          canSend={hasActiveSubscription}
-          hasOverlay={overlay.length > 0 || landmarkFrames.length > 0}
-          exerciseOptions={EXERCISES}
-          selectedExercise={selectedExercise.value}
-          onFileChange={handleFileChange}
-          onExerciseChange={handleExerciseChange}
-          onSend={handleSendToServer}
-          onClearOverlay={handleClearOverlay}
-        />
+        <div className="workspace-left">
+          <UploadPanel
+            fileName={fileName}
+            statusMessage={statusMessage}
+            isSending={isSending}
+            hasVideo={Boolean(videoUrl)}
+            canSend={canAnalyze}
+            hasOverlay={overlay.length > 0 || landmarkFrames.length > 0}
+            exerciseOptions={exerciseOptions}
+            selectedExercise={selectedExercise.value}
+            onFileChange={handleFileChange}
+            onExerciseChange={handleExerciseChange}
+            onSend={handleSendToServer}
+            onClearOverlay={handleClearOverlay}
+          />
+
+          {trialUsage && !trialUsage.isSubscriber ? (
+            <div className="trial-card">
+              <h3>Free trial</h3>
+              <p>
+                Trial remaining: {trialUsage.remainingCount} of {trialUsage.limit} analyses.
+              </p>
+            </div>
+          ) : null}
+        </div>
 
         <div className="viewer-card">
           <VideoStage

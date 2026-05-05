@@ -38,31 +38,37 @@ public class PythonAiAnalyzerService : IAiAnalyzerService
 
         using var process = Process.Start(start);
         if (process == null)
-            throw new Exception("Could not start Python process.");
-
-        string aiFeedback = await process.StandardOutput.ReadToEndAsync();
-        string error = await process.StandardError.ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-    
-        if (process.ExitCode != 0)
         {
-            throw new Exception($"Python Script Error: {error}");
+            throw new Exception("Could not start Python process.");
         }
-        
+
         try
         {
-            if (File.Exists(tempVideoPath))
+            string aiFeedback = await process.StandardOutput.ReadToEndAsync();
+            string error = await process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
             {
-                File.Delete(tempVideoPath);
+                throw new Exception($"Python Script Error: {error}");
+            }
+
+            return (aiFeedback, outputPath);
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(tempVideoPath))
+                {
+                    File.Delete(tempVideoPath);
+                }
+            }
+            catch (Exception)
+            {
+                // Cleanup failure should not fail the analysis.
             }
         }
-        catch (Exception ex)
-        {
-            // Log the error if needed, but don't throw - cleanup failure shouldn't fail the entire operation
-            // Example: _logger.LogWarning(ex, "Failed to delete temporary video file at {Path}", tempVideoPath);
-        }
-        
-        return (aiFeedback, outputPath);
     }
 }

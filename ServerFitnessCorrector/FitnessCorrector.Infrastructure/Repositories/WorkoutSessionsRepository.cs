@@ -46,4 +46,19 @@ public class WorkoutSessionsRepository : IWorkoutSessionRepository
             .OrderByDescending(ws => ws.CreatedAt)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<WorkoutSession>> GetLatestAsync(int take)
+    {
+        var safeTake = take <= 0 ? 20 : take;
+        return await _context.WorkoutSessions
+            .OrderByDescending(ws => ws.CreatedAt)
+            .Take(safeTake)
+            .ToListAsync();
+    }
+
+    public async Task<int> CountByUserIdAsync(Guid userId)
+    {
+        return await _context.WorkoutSessions
+            .CountAsync(ws => ws.UserId == userId);
+    }
 }
