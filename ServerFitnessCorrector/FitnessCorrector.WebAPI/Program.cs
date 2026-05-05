@@ -55,8 +55,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:5173",
             "https://fitness-corrector-frontend.vercel.app",
-            "https://fitness-corrector-frontend-git-main-casiansandus-projects.vercel.app",
-            "https://fitness-corrector-frontend-3wlwsxxj3-casiansandus-projects.vercel.app")
+            "https://fitness-corrector-frontend-git-main-casiansandus-projects.vercel.app")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials(); // Allow credentials (cookies, authorization headers, etc.)
