@@ -192,10 +192,13 @@ export function VideoStage({
       ctx.fill()
     })
 
+    let rawAnalysis: FrameAnalysis | undefined
+    let analysisEntry: FrameAnalysis | null = null
+
     if (pointCoords.length > 0) {
-      const rawAnalysis = frameAnalysis?.[safeIndex]
+      rawAnalysis = frameAnalysis?.[safeIndex]
         ?? frameAnalysis?.find((entry) => entry.frame_index === safeIndex)
-      const analysisEntry = rawFrame && rawFrame.length > 0 ? rawAnalysis : lastAnalysisRef.current
+      analysisEntry = rawFrame && rawFrame.length > 0 ? rawAnalysis ?? null : lastAnalysisRef.current
 
       const goodLines = analysisEntry?.green_lines
       const badLines = analysisEntry?.red_lines
@@ -232,8 +235,8 @@ export function VideoStage({
     }
 
     lastFrameRef.current = frame
-    if (analysisEntry) {
-      lastAnalysisRef.current = analysisEntry
+    if (rawFrame && rawFrame.length > 0 && rawAnalysis) {
+      lastAnalysisRef.current = rawAnalysis
     }
   }, [dimensions, frameAnalysis, landmarkFrames, strokes, trackedLines, videoUrl])
 
