@@ -13,7 +13,11 @@ public class PythonAiAnalyzerService : IAiAnalyzerService
         Stream videoStream,
         string fileName)
     {
-        var baseFolder = @"C:\Users\casia\OneDrive\Desktop\.net2\Project FitnessCorrector\PoseDetection";
+        var baseFolder = Path.Combine(AppContext.BaseDirectory, "PoseDetection");
+        if (!Directory.Exists(baseFolder))
+        {
+            baseFolder = Path.Combine(Directory.GetCurrentDirectory(), "PoseDetection");
+        }
         var tempVideoPath = Path.Combine(baseFolder, "temp", $"{workoutSessionId}{Path.GetExtension(fileName)}");
         var outputPath = Path.Combine(baseFolder, "PoseDetectionResults", $"{workoutSessionId}.json");
 
@@ -27,7 +31,7 @@ public class PythonAiAnalyzerService : IAiAnalyzerService
 
         var start = new ProcessStartInfo
         {
-            FileName = "python",
+            FileName = OperatingSystem.IsWindows() ? "python" : "python3",
             Arguments = $"main.py \"{workoutSessionId}\" \"{tempVideoPath}\" \"{exerciseSlug}\" \"{outputPath}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,

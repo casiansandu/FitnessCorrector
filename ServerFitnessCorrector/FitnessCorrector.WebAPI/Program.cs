@@ -52,7 +52,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Your Frontend URL
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "https://fitness-corrector-frontend.vercel.app")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials(); // Allow credentials (cookies, authorization headers, etc.)
