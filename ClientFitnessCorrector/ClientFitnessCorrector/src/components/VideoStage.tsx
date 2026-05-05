@@ -59,6 +59,8 @@ export function VideoStage({
 }: VideoStageProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const lastFrameRef = useRef<LandmarkFrame | null>(null)
+  const lastAnalysisRef = useRef<FrameAnalysis | null>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
   const syncCanvasSize = useCallback(() => {
@@ -91,6 +93,11 @@ export function VideoStage({
     }
     syncCanvasSize()
   }, [syncCanvasSize, videoUrl])
+
+  useEffect(() => {
+    lastFrameRef.current = null
+    lastAnalysisRef.current = null
+  }, [videoUrl, landmarkFrames, frameAnalysis])
 
   useEffect(() => {
     const videoEl = videoRef.current
@@ -152,7 +159,8 @@ export function VideoStage({
       : duration > 0
         ? Math.min(landmarkFrames.length - 1, Math.floor((videoEl.currentTime / duration) * landmarkFrames.length))
         : 0
-    const frame = landmarkFrames[safeIndex]
+    const rawFrame = landmarkFrames[safeIndex]
+    const frame = rawFrame && rawFrame.length > 0 ? rawFrame : lastFrameRef.current
     if (!frame || frame.length === 0) {
       return
     }
@@ -185,8 +193,9 @@ export function VideoStage({
     })
 
     if (pointCoords.length > 0) {
-      const analysisEntry = frameAnalysis?.[safeIndex]
+      const rawAnalysis = frameAnalysis?.[safeIndex]
         ?? frameAnalysis?.find((entry) => entry.frame_index === safeIndex)
+      const analysisEntry = rawFrame && rawFrame.length > 0 ? rawAnalysis : lastAnalysisRef.current
 
       const goodLines = analysisEntry?.green_lines
       const badLines = analysisEntry?.red_lines
@@ -220,6 +229,11 @@ export function VideoStage({
       if ((!badLines || badLines.length === 0) && (!goodLines || goodLines.length === 0)) {
         drawLineList(fallbackLines, DRAW_STYLE.pointFill)
       }
+    }
+
+    lastFrameRef.current = frame
+    if (analysisEntry) {
+      lastAnalysisRef.current = analysisEntry
     }
   }, [dimensions, frameAnalysis, landmarkFrames, strokes, trackedLines, videoUrl])
 
