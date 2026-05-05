@@ -11,7 +11,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app/out
 
 RUN apt-get update \
-    && apt-get install -y python3 python3-venv python3-pip libgl1 libglib2.0-0 libgles2 \
+    && apt-get install -y python3 python3-venv python3-pip libgl1 libglib2.0-0 libgles2 libegl1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/out ./
