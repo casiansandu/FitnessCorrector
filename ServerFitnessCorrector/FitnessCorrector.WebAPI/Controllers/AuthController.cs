@@ -25,14 +25,7 @@ public class AuthController : ControllerBase
         {
             var result = await _mediator.Send(command, cancellationToken);
 
-            // Set HttpOnly cookie with JWT token
-            Response.Cookies.Append("fitnessCorrectorToken", result.Token, new CookieOptions
-            {
-                HttpOnly = true,              // JavaScript can't access it (XSS protection)
-                Secure = false,               // Set to true in production (requires HTTPS)
-                SameSite = SameSiteMode.Lax,  // Lax works for localhost development
-                MaxAge = TimeSpan.FromMinutes(60)
-            });
+            Response.Cookies.Append("fitnessCorrectorToken", result.Token, CreateAuthCookieOptions());
 
             return Ok(result);
         }
@@ -64,14 +57,7 @@ public class AuthController : ControllerBase
         {
             var result = await _mediator.Send(command, cancellationToken);
 
-            // Set HttpOnly cookie with JWT token
-            Response.Cookies.Append("fitnessCorrectorToken", result.Token, new CookieOptions
-            {
-                HttpOnly = true,              // JavaScript can't access it (XSS protection)
-                Secure = false,               // Set to true in production (requires HTTPS)
-                SameSite = SameSiteMode.Lax,  // Lax works for localhost development
-                MaxAge = TimeSpan.FromMinutes(60)
-            });
+            Response.Cookies.Append("fitnessCorrectorToken", result.Token, CreateAuthCookieOptions());
 
             return Ok(result);
         }
@@ -102,6 +88,21 @@ public class AuthController : ControllerBase
         // Clear the HttpOnly cookie
         Response.Cookies.Delete("fitnessCorrectorToken");
         return Ok(new { message = "Logged out successfully" });
+    }
+
+    private CookieOptions CreateAuthCookieOptions()
+    {
+        var host = HttpContext.Request.Host.Host ?? string.Empty;
+        var isLocalhost = host.Contains("localhost", StringComparison.OrdinalIgnoreCase)
+                          || host.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !isLocalhost,
+            SameSite = isLocalhost ? SameSiteMode.Lax : SameSiteMode.None,
+            MaxAge = TimeSpan.FromMinutes(60)
+        };
     }
 
     [HttpGet("user/{userId:guid}")]
