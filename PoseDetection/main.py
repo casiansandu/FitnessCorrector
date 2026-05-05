@@ -28,6 +28,12 @@ TRACKED_LINES = [
     (PoseLandmark.RIGHT_KNEE, PoseLandmark.RIGHT_ANKLE),
 ]
 
+MODEL_LITE_PATH = "./pose_landmarker_lite.task"
+MODEL_HEAVY_PATH = "./pose_landmarker_heavy.task"
+MAX_ANALYSIS_SECONDS = 20.0
+FRAME_STRIDE = 2
+TARGET_FRAME_WIDTH = 640
+
 EXERCISE_METRICS_CONFIG = {
     "squat": {
         "left": (PoseLandmark.LEFT_HIP, PoseLandmark.LEFT_KNEE, PoseLandmark.LEFT_ANKLE),
@@ -285,7 +291,8 @@ def parse_cli_args():
 
 
 def create_pose_detector():
-    base_options = python.BaseOptions(model_asset_path='./pose_landmarker_heavy.task')
+    model_path = MODEL_LITE_PATH if os.path.exists(MODEL_LITE_PATH) else MODEL_HEAVY_PATH
+    base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.VIDEO, # Tell it we are feeding a video stream
@@ -314,9 +321,32 @@ def process_video_frames(cap, detector, fps, exercise_evaluator, metrics_config)
         if not ret:
             break
 
+        elapsed_seconds = frame_index / fps
+        if elapsed_seconds > MAX_ANALYSIS_SECONDS:
+            break
+
+        if frame.shape[1] > TARGET_FRAME_WIDTH:
+            scale = TARGET_FRAME_WIDTH / frame.shape[1]
+            frame = cv2.resize(frame, (TARGET_FRAME_WIDTH, int(frame.shape[0] * scale)))
+
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
         timestamp_ms = int((frame_index / fps) * 1000)
+
+        if frame_index % FRAME_STRIDE != 0:
+            landmark_frames.append([])
+            frame_analysis.append(
+                {
+                    "frame_index": frame_index,
+                    "timestamp_ms": timestamp_ms,
+                    "bad_form": None,
+                    "failed_checks": ["skipped_frame"],
+                    "red_lines": [],
+                    "green_lines": [],
+                }
+            )
+            frame_index += 1
+            continue
 
         detection_result = detector.detect_for_video(mp_image, timestamp_ms)
         vision.PoseLandmarkerResult
