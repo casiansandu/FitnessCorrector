@@ -24,6 +24,10 @@ const FALLBACK_EXERCISES: Exercise[] = [
   { id: 'squat', value: 'squat', label: 'Back Squat' },
   { id: 'deadlift', value: 'deadlift', label: 'Deadlift' },
   { id: 'bench-press', value: 'bench-press', label: 'Bench Press' },
+  { id: 'overhead-press', value: 'overhead-press', label: 'Overhead Press' },
+  { id: 'lunge', value: 'lunge', label: 'Lunge' },
+  { id: 'push-up', value: 'push-up', label: 'Push-Up' },
+  { id: 'bicep-curl', value: 'bicep-curl', label: 'Bicep Curl' },
 ]
 
 export function WorkoutPage() {

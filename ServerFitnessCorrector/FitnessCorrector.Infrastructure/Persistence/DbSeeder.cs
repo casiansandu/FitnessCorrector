@@ -58,7 +58,11 @@ public static class DbSeeder
         {
             Exercise.Create("squat", "Back Squat", "Barbell back squat", MuscleGroup.Legs),
             Exercise.Create("deadlift", "Deadlift", "Conventional deadlift", MuscleGroup.Back),
-            Exercise.Create("bench-press", "Bench Press", "Barbell bench press", MuscleGroup.Chest)
+            Exercise.Create("bench-press", "Bench Press", "Barbell bench press", MuscleGroup.Chest),
+            Exercise.Create("overhead-press", "Overhead Press", "Standing overhead press", MuscleGroup.Shoulders),
+            Exercise.Create("lunge", "Lunge", "Bodyweight forward lunge", MuscleGroup.Legs),
+            Exercise.Create("push-up", "Push-Up", "Bodyweight push-up", MuscleGroup.Chest),
+            Exercise.Create("bicep-curl", "Bicep Curl", "Standing dumbbell curl", MuscleGroup.Arms)
         };
 
         context.Exercises.AddRange(exercises);
